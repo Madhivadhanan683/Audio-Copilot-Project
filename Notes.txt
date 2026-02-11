@@ -1,0 +1,28 @@
+backend start: .\venv\Scripts\python.exe run.py
+frontend start: npm run dev
+
+Phase 1: MVP (The "Co-Producer" Essentials)
+Chat Interface with Music Context: Speak to the AI about your track naturally.
+BPM/Tempo Detection & Sync: AI knows your project's tempo.
+Key/Scale Detection & Suggestion: AI recommends keys or detects current key.
+MIDI Melody Generation: Text-to-MIDI for melodies (e.g., "Sad violin melody").
+MIDI Chord Progression Generation: Generate progressions (e.g., "ii-V-I in C Major").
+Drum Pattern Generation: Create beats for specific genres (House, Trap, etc.).
+Audio Sample Retrieval: Find samples in your library or online (Mock/API).
+Basic Audio Generation: Generate sound FX or short loops (Text-to-Audio).
+Project Analysis: Read track count, potential loudness issues.
+Settings/Configuration Panel: API Keys, Path management.
+
+Phase 2: Advanced (The "Pro" Features)
+Stem Separation: Split mixed audio into individual stems (the feature we were just debugging).
+Audio-to-MIDI: Convert hummed melodies or audio clips to MIDI.
+Automatic Mixing Suggestions: EQ/Comp curves based on reference tracks.
+VST Plugin Recommender: Suggests specific plugins (e.g., "You need a De-Esser here").
+Lyrics Generation & Rhyme Assistant: Interactive lyric writing support.
+Voice Memo Transcription: Convert recorded ideas/voice memos to notes.
+Arrangement Suggestions: AI advice on structure (e.g., "Make the drop longer").
+Style Transfer/Humanization: Make MIDI patterns sound like they were played by a human.
+Sample Library Auto-Tagging: Automatically organize and tag your local sample folders.
+Synth Preset Generation: Create presets for synths like Serum, Vital, or Massive.
+Collaborative Session Mode: Allow multiple users or AI agents to work on the same session.
+Export/Rendering Assistant: Final checks on loudness/LUFS before exporting.
