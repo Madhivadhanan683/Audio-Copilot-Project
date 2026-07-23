@@ -8,11 +8,39 @@ import AudioToMidi from './components/AudioToMidi';
 import MixingAssistant from './components/MixingAssistant';
 import PluginRecommender from './components/PluginRecommender';
 import LyricsAssistant from './components/LyricsAssistant';
+import VoiceMemo from './components/VoiceMemo';
+import ArrangementSuggester from './components/ArrangementSuggester';
+import HumanizeMidi from './components/HumanizeMidi';
+import SampleLibrary from './components/SampleLibrary';
+import PresetGenerator from './components/PresetGenerator';
+import CollaborativeSession from './components/CollaborativeSession';
+import ExportAssistant from './components/ExportAssistant';
+import AICoProducers from './components/AICoProducers';
 import './index.css';
+
+const NAV_ITEMS = [
+  { key: 'chat', icon: '💬', label: 'Chat' },
+  { key: 'personas', icon: '👤', label: 'AI Co-Producers' },
+  { key: 'stems', icon: '🎵', label: 'Stem Separator' },
+  { key: 'midi', icon: '🎹', label: 'Audio to MIDI' },
+  { key: 'mixing', icon: '🎚️', label: 'Mixing Assistant' },
+  { key: 'plugins', icon: '🧩', label: 'VST Recommender' },
+  { key: 'lyrics', icon: '🎤', label: 'Lyrics' },
+  { key: 'voice', icon: '🎙️', label: 'Voice Memos' },
+  { key: 'arrangement', icon: '🏗️', label: 'Arrangement' },
+  { key: 'humanize', icon: '🎭', label: 'Humanize MIDI' },
+  { key: 'samples', icon: '🗂️', label: 'Sample Library' },
+  { key: 'presets', icon: '🎹', label: 'Preset Generator' },
+  { key: 'collab', icon: '🤝', label: 'Collab Mode' },
+  { key: 'export', icon: '📤', label: 'Export Assistant' },
+];
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'stems', 'midi'
+  const [activeTab, setActiveTab] = useState('personas');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [currentPersona, setCurrentPersona] = useState(null);
+  const menuRef = useRef(null);
   const [dawState, setDawState] = useState({
     connected: false,
     bpm: 120,
@@ -21,6 +49,17 @@ function App() {
   });
 
   const ws = useRef(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const connectWebSocket = () => {
@@ -57,68 +96,57 @@ function App() {
     return () => { if (ws.current) ws.current.close(); };
   }, []);
 
+  const activeItem = NAV_ITEMS.find(item => item.key === activeTab) || NAV_ITEMS[0];
+
+  const handleTabSelect = (key) => {
+    setActiveTab(key);
+    setMenuOpen(false);
+  };
+
   return (
     <div className="app-container">
       <header>
-        <h1>Audio Copilot</h1>
-        <div className="header-actions flex items-center gap-4">
-          {/* Tab Navigation */}
-          <nav className="tab-nav flex gap-1 bg-daw-bg rounded-lg p-1">
+        <div className="flex items-center gap-4">
+          <h1>Audio Copilot</h1>
+          {currentPersona && (
+            <div className="hidden md:flex items-center gap-2 bg-indigo-900/40 px-3 py-1 rounded-full border border-indigo-500/30">
+              <img src={currentPersona.avatar} alt="Avatar" className="w-5 h-5 rounded-full" />
+              <span className="text-sm text-indigo-300">with {currentPersona.name}</span>
+            </div>
+          )}
+        </div>
+        <div className="header-actions flex items-center gap-3">
+          {/* Hamburger Menu */}
+          <div className="hamburger-menu" ref={menuRef}>
             <button
-              onClick={() => setActiveTab('chat')}
-              className={`tab-btn px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'chat'
-                ? 'bg-daw-accent text-black'
-                : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-                }`}
+              className="hamburger-btn"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Navigation menu"
             >
-              💬 Chat
+              <span className="hamburger-icon">
+                <span className={`bar ${menuOpen ? 'open' : ''}`}></span>
+                <span className={`bar ${menuOpen ? 'open' : ''}`}></span>
+                <span className={`bar ${menuOpen ? 'open' : ''}`}></span>
+              </span>
+              <span className="active-tab-label">{activeItem.icon} {activeItem.label}</span>
             </button>
-            <button
-              onClick={() => setActiveTab('stems')}
-              className={`tab-btn px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'stems'
-                ? 'bg-daw-accent text-black'
-                : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-                }`}
-            >
-              🎵 Stem Separator
-            </button>
-            <button
-              onClick={() => setActiveTab('midi')}
-              className={`tab-btn px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'midi'
-                ? 'bg-daw-accent text-black'
-                : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-                }`}
-            >
-              🎹 Audio to MIDI
-            </button>
-            <button
-              onClick={() => setActiveTab('mixing')}
-              className={`tab-btn px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'mixing'
-                ? 'bg-daw-accent text-black'
-                : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-                }`}
-            >
-              🎚️ Mixing Assistant
-            </button>
-            <button
-              onClick={() => setActiveTab('plugins')}
-              className={`tab-btn px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'plugins'
-                ? 'bg-daw-accent text-black'
-                : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-                }`}
-            >
-              🧩 VST Recommender
-            </button>
-            <button
-              onClick={() => setActiveTab('lyrics')}
-              className={`tab-btn px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'lyrics'
-                ? 'bg-daw-accent text-black'
-                : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-                }`}
-            >
-              🎤 Lyrics
-            </button>
-          </nav>
+
+            {menuOpen && (
+              <div className="hamburger-dropdown">
+                {NAV_ITEMS.map(item => (
+                  <button
+                    key={item.key}
+                    onClick={() => handleTabSelect(item.key)}
+                    className={`hamburger-item ${activeTab === item.key ? 'active' : ''}`}
+                  >
+                    <span className="item-icon">{item.icon}</span>
+                    <span className="item-label">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <button className="settings-btn" onClick={() => setIsSettingsOpen(true)}>⚙️ Settings</button>
         </div>
       </header>
@@ -129,12 +157,20 @@ function App() {
         </div>
 
         {/* Conditionally render based on active tab */}
-        {activeTab === 'chat' && <ChatInterface />}
+        {activeTab === 'chat' && <ChatInterface currentPersona={currentPersona} dawState={dawState} />}
+        {activeTab === 'personas' && <AICoProducers currentPersona={currentPersona} setCurrentPersona={(p) => { setCurrentPersona(p); setActiveTab('chat'); }} />}
         {activeTab === 'stems' && <StemSeparator />}
         {activeTab === 'midi' && <AudioToMidi />}
         {activeTab === 'mixing' && <MixingAssistant />}
         {activeTab === 'plugins' && <PluginRecommender />}
         {activeTab === 'lyrics' && <LyricsAssistant />}
+        {activeTab === 'voice' && <VoiceMemo />}
+        {activeTab === 'arrangement' && <ArrangementSuggester />}
+        {activeTab === 'humanize' && <HumanizeMidi />}
+        {activeTab === 'samples' && <SampleLibrary />}
+        {activeTab === 'presets' && <PresetGenerator />}
+        {activeTab === 'collab' && <CollaborativeSession />}
+        {activeTab === 'export' && <ExportAssistant />}
 
       </main>
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />

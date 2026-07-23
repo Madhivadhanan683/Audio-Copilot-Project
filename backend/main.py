@@ -10,8 +10,15 @@ from service_midi import AudioToMidi, MockAudioToMidiService
 from ai.mixing_service import MixingService
 from ai.plugin_service import PluginService
 from ai.lyrics_service import LyricsService
+from ai.transcription_service import TranscriptionService, MockTranscriptionService
+from ai.arrangement_service import ArrangementService
+from ai.humanize_service import HumanizeService
+from ai.sample_tagging_service import SampleTaggingService
+from ai.preset_service import PresetService
+from ai.export_service import ExportService
 
 from bridge.daw_server import DAWBridge
+from bridge.session_manager import SessionManager
 import os
 import shutil
 import uuid
@@ -56,7 +63,33 @@ mixing_service = MixingService()
 plugin_service = PluginService()
 
 # Lyrics Service
+# Lyrics Service
 lyrics_service = LyricsService()
+
+# Transcription Service
+try:
+    transcription_service = TranscriptionService()
+except Exception as e:
+    print(f"Could not initialize TranscriptionService: {e}")
+    transcription_service = MockTranscriptionService()
+
+# Arrangement Service
+arrangement_service = ArrangementService()
+
+# Humanize Service
+humanize_service = HumanizeService()
+
+# Sample Tagging Service
+sample_tagging_service = SampleTaggingService()
+
+# Preset Generator Service
+preset_service = PresetService()
+
+# Session Manager for Collab
+session_manager = SessionManager()
+
+# Export Service
+export_service = ExportService()
 
 # Mount directories for generated files using absolute paths
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -75,6 +108,8 @@ current_settings = {
 
 class ChatRequest(BaseModel):
     message: str
+    persona_id: str | None = None
+    daw_state: dict | None = None
 
 class GenerateRequest(BaseModel):
     prompt: str
@@ -126,10 +161,34 @@ async def update_settings(settings: SettingsRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/personas")
+async def get_personas():
+    """Get available AI Co-Producers"""
+    try:
+        from ai.personas import PERSONAS
+        # Return as a list of dicts without the heavy system prompts
+        return {
+            "personas": [
+                {
+                    "id": p["id"],
+                    "name": p["name"],
+                    "avatar": p["avatar"],
+                    "description": p["description"],
+                    "genre": p["genre"]
+                } for p in PERSONAS.values()
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
     try:
-        response = llm_service.generate_response(request.message)
+        response = llm_service.generate_response(
+            request.message, 
+            persona_id=request.persona_id,
+            daw_state=request.daw_state
+        )
         return response 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -377,6 +436,284 @@ async def get_rhymes(word: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============== TRANSCRIPTION ENDPOINTS ==============
+
+@app.post("/api/transcription/transcribe")
+async def transcribe_audio(
+    file: UploadFile = File(...)
+):
+    """Transcribe an uploaded audio file."""
+    try:
+        print(f"Received file for transcription: {file.filename}")
+        
+        # Validate file type
+        allowed_extensions = [".mp3", ".wav", ".flac", ".ogg", ".m4a", ".webm"]
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        
+        if file_ext not in allowed_extensions:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
+            )
+        
+        # Save uploaded file
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        uploads_dir = os.path.join(base_dir, "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        upload_path = os.path.join(uploads_dir, f"transcription_input_{uuid.uuid4()}{file_ext}")
+        with open(upload_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        print(f"Saved file to: {upload_path}")
+        
+        # Process transcription
+        text = transcription_service.transcribe(upload_path)
+        
+        return {"text": text}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Transcription error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/transcription/save")
+async def save_transcription(
+    request: dict
+):
+    """Save transcription to Notes.txt"""
+    try:
+        text = request.get("text")
+        if not text:
+            raise HTTPException(status_code=400, detail="Text is required")
+            
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        # Assuming Notes.txt is in the project root, which is one level up from backend
+        project_root = os.path.dirname(base_dir)
+        notes_path = os.path.join(project_root, "Notes.txt")
+        
+        with open(notes_path, "a") as f:
+            f.write(f"\n\n--- Voice Memo ({uuid.uuid4()}) ---\n")
+            f.write(text)
+            
+        return {"status": "success", "message": "Note saved"}
+    except Exception as e:
+        print(f"Save note error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============== ARRANGEMENT ANALYSIS ENDPOINTS ==============
+
+@app.post("/api/arrangement/analyze")
+async def analyze_arrangement(
+    file: UploadFile = File(...)
+):
+    """Analyze audio structure and provide arrangement suggestions."""
+    try:
+        print(f"Received file for arrangement analysis: {file.filename}")
+        
+        # Validate file type
+        allowed_extensions = [".mp3", ".wav", ".flac", ".ogg", ".m4a"]
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        
+        if file_ext not in allowed_extensions:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
+            )
+        
+        # Save uploaded file
+        base_dir_local = os.path.dirname(os.path.abspath(__file__))
+        uploads_dir = os.path.join(base_dir_local, "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        upload_path = os.path.join(uploads_dir, f"arrangement_input_{uuid.uuid4()}{file_ext}")
+        with open(upload_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        print(f"Saved file to: {upload_path}")
+        
+        # Process arrangement analysis
+        result = await arrangement_service.analyze_arrangement(upload_path)
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Arrangement analysis error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============== HUMANIZE MIDI ENDPOINTS ==============
+
+class HumanizeRequest(BaseModel):
+    timing: float = 0.5
+    velocity: float = 0.5
+    swing: float = 0.5
+
+@app.post("/api/humanize/process")
+async def humanize_midi(
+    file: UploadFile = File(...),
+    timing: float = 0.5,
+    velocity: float = 0.5,
+    swing: float = 0.5,
+):
+    """Humanize an uploaded MIDI file."""
+    try:
+        print(f"Received file for humanization: {file.filename}")
+        
+        # Validate file type
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in [".mid", ".midi"]:
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid file type. Please upload a MIDI file (.mid or .midi)."
+            )
+        
+        # Clamp values
+        timing = max(0.0, min(1.0, timing))
+        velocity = max(0.0, min(1.0, velocity))
+        swing = max(0.0, min(1.0, swing))
+        
+        # Save uploaded file
+        base_dir_local = os.path.dirname(os.path.abspath(__file__))
+        uploads_dir = os.path.join(base_dir_local, "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        upload_path = os.path.join(uploads_dir, f"humanize_input_{uuid.uuid4()}{file_ext}")
+        with open(upload_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        print(f"Saved file to: {upload_path}")
+        
+        # Process humanization
+        result = humanize_service.humanize(
+            upload_path,
+            timing=timing,
+            velocity=velocity,
+            swing=swing,
+        )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Humanize error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============== SAMPLE LIBRARY TAGGING ENDPOINTS ==============
+
+class ScanRequest(BaseModel):
+    folder_path: str
+
+@app.post("/api/samples/scan")
+async def scan_samples(request: ScanRequest):
+    """Scan a local directory for audio samples and tag them."""
+    try:
+        if not request.folder_path:
+            raise HTTPException(status_code=400, detail="Folder path is required")
+        
+        result = sample_tagging_service.scan_directory(request.folder_path)
+        if "error" in result:
+             raise HTTPException(status_code=400, detail=result["error"])
+             
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Sample scan error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/samples/audio")
+async def get_sample_audio(path: str):
+    """Stream a local audio file by its absolute path for previewing."""
+    try:
+        if not os.path.exists(path):
+            raise HTTPException(status_code=404, detail="File not found")
+            
+        allowed_extensions = [".wav", ".mp3", ".flac", ".aiff", ".ogg", ".m4a"]
+        file_ext = os.path.splitext(path)[1].lower()
+        if file_ext not in allowed_extensions:
+            raise HTTPException(status_code=400, detail="Not a supported audio file")
+            
+        filename = os.path.basename(path)
+        return FileResponse(path, filename=filename)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============== SYNTH PRESET ENDPOINTS ==============
+
+class PresetRequest(BaseModel):
+    synth: str
+    style: str
+
+@app.post("/api/presets/generate")
+async def generate_preset(request: PresetRequest):
+    """Generate a synth preset file."""
+    try:
+        if request.synth.lower() != "vital":
+            raise HTTPException(status_code=400, detail="Only 'vital' is supported currently.")
+            
+        preset_data = preset_service.generate_vital_preset(request.style)
+        return preset_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Preset generation error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============== EXPORT/RENDERING ASSISTANT ENDPOINTS ==============
+
+@app.post("/api/export/analyze")
+async def analyze_for_export(
+    file: UploadFile = File(...)
+):
+    """Analyze an audio file for export readiness."""
+    try:
+        print(f"Received file for export analysis: {file.filename}")
+        
+        # Validate file type
+        allowed_extensions = [".mp3", ".wav", ".flac", ".ogg", ".m4a"]
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        
+        if file_ext not in allowed_extensions:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
+            )
+        
+        # Save uploaded file
+        base_dir_local = os.path.dirname(os.path.abspath(__file__))
+        uploads_dir = os.path.join(base_dir_local, "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        upload_path = os.path.join(uploads_dir, f"export_input_{uuid.uuid4()}{file_ext}")
+        with open(upload_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        print(f"Saved file to: {upload_path}")
+        
+        # Process export analysis
+        result = await export_service.analyze_for_export(upload_path)
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Export analysis error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ============== WEBSOCKET ==============
 
 @app.websocket("/ws/daw")
@@ -385,9 +722,26 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            await daw_bridge.handle_message(data)
+            await daw_bridge.handle_message(data, sender=websocket)
     except WebSocketDisconnect:
         daw_bridge.disconnect(websocket)
     except Exception as e:
         print(f"WebSocket Error: {e}")
         daw_bridge.disconnect(websocket)
+
+@app.websocket("/ws/session/{session_id}")
+async def session_websocket(websocket: WebSocket, session_id: str):
+    await session_manager.connect(websocket, session_id)
+    try:
+        while True:
+            data_str = await websocket.receive_text()
+            await session_manager.handle_message(data_str, websocket, session_id)
+    except WebSocketDisconnect:
+        session_manager.disconnect(websocket, session_id)
+        await session_manager.broadcast(
+            {"type": "USER_LEFT", "payload": {"message": "A user left the session."}},
+            session_id
+        )
+    except Exception as e:
+        print(f"Session WebSocket Error: {e}")
+        session_manager.disconnect(websocket, session_id)

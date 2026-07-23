@@ -1,13 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-const ChatInterface = () => {
-    const [messages, setMessages] = useState([
-        { sender: 'ai', text: "I'm your Audio Copilot. Ready to produce? Try asking for a 'sad violin melody'.", files: [] }
-    ]);
+const ChatInterface = ({ currentPersona, dawState }) => {
+    const defaultWelcome = "I'm your Audio Copilot. Ready to produce? Try asking for a 'sad violin melody'.";
+    const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
+
+    // Update welcome message when persona changes
+    useEffect(() => {
+        if (currentPersona) {
+            setMessages([
+                { sender: 'ai', text: `Hi! I'm your digital twin of ${currentPersona.name}. Let's make some hit music! What are we working on?`, files: [] }
+            ]);
+        } else {
+            setMessages([
+                { sender: 'ai', text: defaultWelcome, files: [] }
+            ]);
+        }
+    }, [currentPersona]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -26,10 +38,18 @@ const ChatInterface = () => {
         setIsLoading(true);
 
         try {
+            const payload = { 
+                message: userMsg.text,
+                daw_state: dawState
+            };
+            if (currentPersona) {
+                payload.persona_id = currentPersona.id;
+            }
+
             const response = await fetch('http://127.0.0.1:8000/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: userMsg.text })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) throw new Error('Network response was not ok');

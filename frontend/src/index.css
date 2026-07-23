@@ -33,6 +33,127 @@ header {
   align-items: center;
 }
 
+/* Hamburger Menu */
+.hamburger-menu {
+  position: relative;
+}
+
+.hamburger-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  color: #e0e0e0;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.hamburger-btn:hover {
+  background: #333;
+  border-color: #555;
+}
+
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 18px;
+}
+
+.hamburger-icon .bar {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: var(--primary-color);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+.hamburger-icon .bar.open:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.hamburger-icon .bar.open:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.hamburger-icon .bar.open:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.active-tab-label {
+  font-size: 0.875rem;
+}
+
+.hamburger-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  background: #1e1e1e;
+  border: 1px solid #444;
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+  min-width: 220px;
+  z-index: 1000;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  animation: dropdownSlide 0.2s ease;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hamburger-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: #ccc;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.hamburger-item:hover {
+  background: #333;
+  color: #fff;
+}
+
+.hamburger-item.active {
+  background: var(--primary-color);
+  color: #000;
+}
+
+.hamburger-item .item-icon {
+  font-size: 1.1rem;
+  width: 24px;
+  text-align: center;
+}
+
+.hamburger-item .item-label {
+  flex: 1;
+}
+
 main {
   display: flex;
   flex: 1;

@@ -1,0 +1,208 @@
+# Audio Copilot: An AI-Powered Intelligent Music Production Assistant
+## PPT Content
+
+---
+
+## 1. Introduction (Slide 1–2)
+
+### Slide 1 — Title Slide
+
+**Title:** Audio Copilot — An AI-Powered Intelligent Music Production Assistant  
+**Subtitle:** Bridging the Gap Between Artificial Intelligence and Digital Audio Workstations  
+**Name / Department / College / Year:** *(fill in your details)*
+
+---
+
+### Slide 2 — Project Overview
+
+**What is Audio Copilot?**
+
+Audio Copilot is an AI-integrated music production assistant designed to work alongside Digital Audio Workstations (DAWs) such as REAPER. It provides real-time, context-aware assistance to music producers by offering intelligent features like melody and chord generation, stem separation, audio-to-MIDI conversion, mixing analysis, lyrics generation, and collaborative sessions — all through a unified web interface that communicates directly with the DAW.
+
+**Key highlights:**
+- Real-time WebSocket bridge between a React frontend and the REAPER DAW
+- Python (FastAPI) backend hosting 15+ AI-driven microservices
+- Two-phase architecture: MVP "Co-Producer" essentials and Advanced "Pro" features
+- Targets both amateur and professional music producers
+
+---
+
+## 2. Problem Statement (Slide 3)
+
+### Slide 3 — Problem Statement
+
+Modern music production is an inherently complex, multi-disciplinary process that requires expertise in composition, sound design, audio engineering, and arrangement. Existing Digital Audio Workstations (DAWs) provide powerful tools but offer **no intelligent, context-aware assistance** during the creative workflow.
+
+**Core problems identified:**
+
+1. **Steep Learning Curve:** New producers struggle with mixing, mastering, arrangement, and sound selection, with no in-DAW guidance system.
+2. **Fragmented Tooling:** Producers must switch between dozens of standalone tools (chord generators, rhyming dictionaries, sample taggers, LUFS analysers) which breaks creative flow.
+3. **No AI Integration in DAWs:** While AI has advanced in text, image, and code generation, mainstream DAWs have virtually no built-in AI capabilities for music creation or analysis.
+4. **Lack of Real-Time Collaboration:** Most DAWs lack native real-time collaborative features, making remote co-production difficult.
+5. **Repetitive Manual Tasks:** Tasks such as sample library organisation, preset creation, and export-readiness checks are tedious and time-consuming.
+
+> **In summary:** There is no existing system that unifies AI-powered composition, analysis, and production assistance within a real-time DAW-connected environment.
+
+---
+
+## 3. Objectives (Slide 4)
+
+### Slide 4 — Project Objectives
+
+1. **Design and develop an AI-powered copilot system** that integrates with the REAPER DAW via a real-time WebSocket bridge, enabling context-aware music production assistance.
+2. **Implement intelligent MIDI generation** including melody, chord progression, and drum pattern generation based on natural-language prompts.
+3. **Build audio analysis services** for BPM/tempo detection, key/scale detection, mixing suggestions, and arrangement analysis using signal processing and AI.
+4. **Develop stem separation capabilities** to isolate vocals, drums, bass, and other stems from mixed audio using deep learning models (Demucs).
+5. **Create an audio-to-MIDI conversion pipeline** that converts hummed melodies or recorded audio into editable MIDI data using the Basic Pitch model.
+6. **Implement creative AI tools** including lyrics generation with rhyme assistance, VST plugin recommendation, synth preset generation, and MIDI humanization.
+7. **Enable real-time collaborative sessions** allowing multiple users to work on the same music project simultaneously through WebSocket-based synchronization.
+8. **Provide production utility services** including sample library auto-tagging, voice memo transcription, and export/rendering readiness analysis (LUFS, clipping, DC offset checks).
+
+---
+
+## 4. Base Paper — Journal Paper Reference (Slide 5)
+
+### Slide 5 — Base Paper
+
+**Title:** *"Music Generation with AI: A Review of Deep Learning and Transformer-Based Approaches"*
+
+| Field | Detail |
+|---|---|
+| **Authors** | J. Hernandez-Olivan and J. R. Beltrán |
+| **Journal** | *Applied Sciences*, MDPI |
+| **Year** | 2022 |
+| **Volume/Issue** | Vol. 12, Issue 5, Article 2521 |
+| **DOI** | [10.3390/app12052521](https://doi.org/10.3390/app12052521) |
+| **Publisher** | MDPI (Open Access) |
+
+**Summary:**  
+This survey paper provides a comprehensive taxonomy of music generation using deep learning. It classifies systems by representation (audio, symbolic/MIDI, hybrid), model architecture (RNN, GAN, Transformer, VAE), and generation task (melody, harmony, accompaniment). The paper highlights the emergence of Transformer-based models (e.g., Music Transformer, MuseNet) as state-of-the-art for symbolic music generation and identifies key challenges including evaluation metrics, controllability, and real-time interaction — all of which are directly addressed by Audio Copilot.
+
+**Relevance to our project:**
+- Validates the use of AI for MIDI melody/chord generation
+- Highlights the lack of integrated, real-time AI-DAW systems (which our project addresses)
+- Supports the multi-modal approach (audio analysis + symbolic generation)
+
+---
+
+## 5. Literature Survey (Slides 6–8)
+
+### Slide 6 — Literature Survey (Part 1: AI for Music Generation)
+
+| # | Title | Authors | Year | Key Contribution |
+|---|---|---|---|---|
+| 1 | AudioLDM: Text-to-Audio Generation with Latent Diffusion Models | Liu et al. | 2023 | High-quality text-to-audio using Latent Diffusion Models and CLAP embeddings |
+| 2 | VampNet: Music Generation via Masked Acoustic Token Modeling | Garcia et al. | 2023 | Non-autoregressive model for music inpainting and variation synthesis |
+| 3 | SymphonyNet: Multi-track Symbolic Music Generation | Liu et al. | 2022 | Multi-track MIDI generation using Music BPE and linear transformers |
+| 4 | MusicLM: Generating Music From Text | Agostinelli et al. | 2023 | High-fidelity 24 kHz audio generation with text and melody conditioning |
+| 5 | AudioCraft / MusicGen | Copet et al. | 2023 | Single-stage Transformer for controllable text-to-music generation |
+
+---
+
+### Slide 7 — Literature Survey (Part 2: Audio Analysis & Source Separation)
+
+| # | Title | Authors | Year | Key Contribution |
+|---|---|---|---|---|
+| 6 | Hybrid Transformers for Music Source Separation | Rouard et al. | 2023 | Demucs v4 — Hybrid Transformer achieving SOTA stem separation SDR |
+| 7 | Basic Pitch: Lightweight Polyphonic Note Transcription | Bittner et al. | 2022 | Instrument-agnostic audio-to-MIDI model used in our conversion feature |
+| 8 | CLAP: Contrastive Language-Audio Pretraining | Elizalde et al. | 2023 | Joint multimodal space for audio-text alignment and zero-shot classification |
+| 9 | AudioMAE: Masked Autoencoders that Listen | Huang et al. | 2022 | Efficient self-supervised audio representation using 80% masking ratio |
+| 10 | OpenAI Whisper: Robust Speech Recognition | Radford et al. | 2023 | Near human-level multilingual ASR; used in our Voice Memo feature |
+
+---
+
+### Slide 8 — Literature Survey (Part 3: DAW Integration & Creative AI)
+
+| # | Title | Authors | Year | Key Contribution |
+|---|---|---|---|---|
+| 11 | Music ControlNet | Wu et al. | 2023 | Time-varying controls for melody, dynamics, and rhythm in generation |
+| 12 | LLaMA 2: Open Foundation Chat Models | Touvron et al. | 2023 | Foundation for our creative assistant and music context chat Interface |
+| 13 | Music Generation with AI: A Review | Hernandez-Olivan | 2022 | Comprehensive taxonomy of Transformer-based music generation systems |
+| 14 | AI and Music: Market Development | Goldmedia | 2024 | Survey of 15,000 creators on AI adoption in music production workflows |
+| 15 | AI-Assisted Music Production User Study | Bown et al. | 2023 | Analysis of workflow bottlenecks and ideation patterns in AI-DAW setups |
+
+---
+
+## 6. Gap Identification (Slide 9)
+
+### Slide 9 — Gap Identification
+
+### Slide 9 — Gap Identification
+
+▶ Most existing approaches focus only on **individual tasks** such as symbolic generation or source separation, rather than a **unified music production workflow**.
+
+▶ Many solutions are **standalone prototypes**, requiring users to switch between disparate web interfaces or CLI tools instead of having **direct DAW integration**.
+
+▶ Several methods emphasize generation accuracy but provide **limited support for real-time interaction** and iterative composition within a professional recording environment.
+
+▶ Existing AI assistants often lack **DAW-specific project context**, such as awareness of current BPM, track hierarchy, and playback state, leading to **non-contextual suggestions**.
+
+▶ Current systems provide **limited collaborative capabilities**, making it difficult for multiple producers to work simultaneously with the same AI model in a **shared creative session**.
+
+---
+
+## 7. References (Slide 10)
+
+### Slide 10 — References
+
+1. Liu, H., et al. (2023). **AudioLDM: Text-to-Audio Generation with Latent Diffusion Models.** *Proc. ICML 2023*.
+2. Garcia, H. F., et al. (2023). **VampNet: Music Generation via Masked Acoustic Token Modeling.** *Proc. ISMIR 2023*.
+3. Liu, J., et al. (2022). **SymphonyNet: A Multi-track Symbolic Music Generation System.** *Proc. ISMIR 2022*.
+4. Agostinelli, A., et al. (2023). **MusicLM: Generating Music From Text.** *arXiv preprint arXiv:2301.11325*.
+5. Copet, J., et al. (2023). **Simple and Controllable Music Generation.** *Proc. NeurIPS 2023*.
+6. Rouard, S., et al. (2023). **Hybrid Transformers for Music Source Separation.** *Proc. ICASSP 2023*.
+7. Bittner, R. M., et al. (2022). **A Lightweight Instrument-Agnostic Model for Polyphonic Note Transcription.** *Proc. ICASSP 2022*.
+8. Elizalde, B., et al. (2023). **CLAP: Contrastive Language-Audio Pretraining.** *Proc. ICASSP 2023*.
+9. Huang, C., et al. (2022). **AudioMAE: Masked Autoencoders that Listen.** *Proc. NeurIPS 2022*.
+10. Radford, A., et al. (2023). **Robust Speech Recognition via Large-Scale Weak Supervision.** *Proc. ICML 2023*.
+11. Wu, S., et al. (2023). **Music ControlNet: Multiple Time-varying Controls for Music Generation.** *arXiv preprint arXiv:2311.07063*.
+12. Touvron, H., et al. (2023). **LLaMA 2: Open Foundation and Fine-Tuned Chat Models.** *arXiv preprint arXiv:2307.09288*.
+13. Hernandez-Olivan, J., & Beltrán, J. R. (2022). **Music Generation with AI: A Review.** *Applied Sciences*, 12(5), 2521.
+14. Goldmedia / GEMA. (2024). **AI and Music: Market Development and Perspectives.** *Industry Report*.
+15. Bown, O., et al. (2023). **AI-Assisted Music Production: A User Study.** *Proc. CMMR 2023*.
+
+---
+
+## 8. Timeline (Slide 11)
+
+### Slide 11 — Project Timeline
+
+| Phase | Duration |
+| :--- | :--- |
+| **Literature Survey** | Week 1 – Week 2 |
+| **Problem Analysis & Requirement Study** | Week 3 |
+| **System Design & Architecture** | Week 4 |
+| **Audio Feature Extraction & Analysis** | Month 2 |
+| **Generative Model Development (MIDI/Audio)** | Month 2 |
+| **DAW Bridge & WebSocket Integration** | Month 3 |
+| **System Implementation (Frontend/Backend)** | Month 3 |
+| **Testing & Evaluation** | Month 4 |
+| **Documentation & Final Report** | Month 4 |
+
+---
+
+## 9. Software Requirements (Slide 12)
+
+### Slide 12 — Software Requirements
+
+▶ **Programming Language:** Python, JavaScript
+
+▶ **Operating System:** Windows / Linux
+
+▶ **Development Tools:** VS Code, REAPER DAW (ReaScript)
+
+▶ **Audio Processing Libraries:** Librosa, NumPy, SciPy
+
+▶ **Machine Learning Libraries:** PyTorch, TensorFlow, Spotify Basic Pitch
+
+▶ **Backend Frameworks:** FastAPI, Uvicorn
+
+▶ **Frontend Tools:** React, Vite, HTML/CSS/JavaScript
+
+▶ **Communication Protocol:** WebSockets (Real-time Sync)
+
+▶ **AI Models:** Demucs v4, OpenAI Whisper, Meta MusicGen
+
+▶ **Database:** JSON / PostgreSQL (Session Management)
+
+---

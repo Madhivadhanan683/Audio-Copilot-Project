@@ -34,16 +34,18 @@ class DAWBridge:
         if len(self.active_connections) == 0:
             self.daw_state["status"] = "disconnected"
 
-    async def broadcast(self, message: str):
+    async def broadcast(self, message: str, exclude: WebSocket = None):
         # In a refined version, we'd distinguish between frontend clients and DAW clients
         for connection in self.active_connections:
+            if exclude and connection == exclude:
+                continue
             try:
                 await connection.send_text(message)
             except RuntimeError:
                 # Connection might be closed
                 pass
 
-    async def handle_message(self, message: str):
+    async def handle_message(self, message: str, sender: WebSocket = None):
         try:
             data = json.loads(message)
             msg_type = data.get("type")
@@ -52,7 +54,7 @@ class DAWBridge:
             print(f"Received from DAW: {msg_type}")
 
             if msg_type == "HEARTBEAT":
-                await self.broadcast(json.dumps({"type": "HEARTBEAT_ACK"}))
+                await self.broadcast(json.dumps({"type": "HEARTBEAT_ACK"})) # no exclude, sender wants heartbeat
             
             elif msg_type == "UPDATE_BPM":
                 self.daw_state["bpm"] = payload.get("bpm", 120)
@@ -60,21 +62,35 @@ class DAWBridge:
                 await self.broadcast(json.dumps({
                     "type": "STATE_UPDATE",
                     "payload": self.daw_state
-                }))
+                }), exclude=sender)
             
             elif msg_type == "UPDATE_KEY":
                 self.daw_state["key"] = payload.get("key", "C Major")
                 await self.broadcast(json.dumps({
                     "type": "STATE_UPDATE",
                     "payload": self.daw_state
-                }))
+                }), exclude=sender)
             
             elif msg_type == "UPDATE_TRACKS":
                 self.daw_state["tracks"] = payload.get("tracks", [])
                 await self.broadcast(json.dumps({
                     "type": "STATE_UPDATE",
                     "payload": self.daw_state
-                }))
+                }), exclude=sender)
+
+            elif msg_type == "UPDATE_PROJECT":
+                self.daw_state["project_name"] = payload.get("name", "Untitled")
+                await self.broadcast(json.dumps({
+                    "type": "STATE_UPDATE",
+                    "payload": self.daw_state
+                }), exclude=sender)
+
+            elif msg_type == "STATE_UPDATE":
+                self.daw_state.update(payload)
+                await self.broadcast(json.dumps({
+                    "type": "STATE_UPDATE",
+                    "payload": self.daw_state
+                }), exclude=sender)
 
         except json.JSONDecodeError:
             print(f"Received non-JSON message: {message}")

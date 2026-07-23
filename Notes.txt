@@ -1,5 +1,27 @@
-backend start: .\venv\Scripts\python.exe run.py
+backend start:.\venv\Scripts\python.exe run.py 
 frontend start: npm run dev
+
+Set your Git Identity (if you haven't already):
+powershell
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
+
+Commit the Changes:
+powershell
+git add .
+git commit -m "Initial commit: AudioCopilotProject"
+
+Link to GitHub:
+
+Create a new repository on GitHub.
+Copy the repository URL.
+Run:
+powershell
+git remote add origin YOUR_REPOSITORY_URL
+git branch -M main
+git push -u origin main
+
+OpenAPI key: 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
 
 Phase 1: MVP (The "Co-Producer" Essentials)
 Chat Interface with Music Context: Speak to the AI about your track naturally.

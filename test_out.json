@@ -1,0 +1,46 @@
+{
+  "samples": [
+    {
+      "id": "b85a42de-65fc-4605-b183-9539a3405e5a",
+      "name": "Heavy_Kick_128bpm_Cmin",
+      "filename": "Heavy_Kick_128bpm_Cmin.wav",
+      "path": "d:\\Projects\\2025\\AudioCopilotProject\\test_samples\\Heavy_Kick_128bpm_Cmin.wav",
+      "category": "Kick",
+      "tags": [
+        "Kick"
+      ],
+      "bpm": 128,
+      "key": "Cmin",
+      "size_mb": 0.0,
+      "extension": ".wav"
+    },
+    {
+      "id": "4aaf2d50-1722-4923-b453-3c3da500ae89",
+      "name": "House_Loop_120bpm_Am",
+      "filename": "House_Loop_120bpm_Am.wav",
+      "path": "d:\\Projects\\2025\\AudioCopilotProject\\test_samples\\House_Loop_120bpm_Am.wav",
+      "category": "Loop",
+      "tags": [
+        "Loop"
+      ],
+      "bpm": 120,
+      "key": "Am",
+      "size_mb": 0.0,
+      "extension": ".wav"
+    },
+    {
+      "id": "6a4e3d0f-2e9b-4d19-a2e6-1f59b63de433",
+      "name": "Vocal_Chop_F#m",
+      "filename": "Vocal_Chop_F#m.wav",
+      "path": "d:\\Projects\\2025\\AudioCopilotProject\\test_samples\\Vocal_Chop_F#m.wav",
+      "category": "Vocal",
+      "tags": [
+        "Vocal"
+      ],
+      "bpm": null,
+      "key": "F#m",
+      "size_mb": 0.0,
+      "extension": ".wav"
+    }
+  ]
+}
