@@ -1,23 +1,16 @@
 import os
 import uuid
 from pathlib import Path
-from typing import Optional
-
-# try:
-#     from basic_pitch.inference import predict_and_save
-#     BASIC_PITCH_AVAILABLE = True
-# except ImportError:
-#     BASIC_PITCH_AVAILABLE = False
-#     print("Warning: basic-pitch not installed. Audio-to-MIDI will not work.")
-
-BASIC_PITCH_AVAILABLE = False
-print("DEBUG: midi_service.py execution started")
+import librosa
+import numpy as np
+import mido
 
 class AudioToMidi:
     """
-    Service to convert audio files to MIDI using basic-pitch.
+    Service to convert audio files to MIDI using signal processing (librosa pYIN + mido).
+    Accurately tracks fundamental pitch and writes real .mid note events.
     """
-    BASIC_PITCH_AVAILABLE = BASIC_PITCH_AVAILABLE
+    BASIC_PITCH_AVAILABLE = True
     
     def __init__(self, output_dir: str = "generated_midi"):
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,81 +20,94 @@ class AudioToMidi:
         
     async def convert_audio_to_midi(self, input_file: str) -> dict:
         """
-        Convert an audio file to a MIDI file.
+        Convert an audio file to a MIDI file using pitch tracking.
         Returns a dictionary with the filename and URL of the generated MIDI.
         """
-        if not BASIC_PITCH_AVAILABLE:
-            raise ImportError("basic-pitch library is not installed on the server.")
-            
+        import asyncio
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._process_conversion, input_file)
+
+    def _process_conversion(self, input_file: str) -> dict:
         try:
-            # Generate a unique filename for the output
             job_id = str(uuid.uuid4())[:8]
-            output_filename = f"midi_convention_{job_id}.mid"
+            output_filename = f"pitch_conversion_{job_id}.mid"
             output_path = os.path.join(self.output_dir, output_filename)
-            
-            # Predict and save
-            # basic-pitch saves multiple files if save_midi=True, save_notes=True, etc.
-            # predict_and_save returns [midi_path, note_events_path, ...]
-            # We only want the MIDI file.
-            
+
             print(f"Converting {input_file} to MIDI...")
             
-            # Basic Pitch API: predict_and_save(audio_path_list, output_directory, save_midi, save_model_outputs, save_notes)
-            # It processes a list of files.
+            # Load audio file
+            y, sr = librosa.load(input_file, sr=22050)
             
-            # Note: predict_and_save is a synchronous function, so we might want to run it in an executor if it blocks too long.
-            # But for a prototype, calling it directly is fine for now, or we can use run_in_executor.
-            
-            import asyncio
-            loop = asyncio.get_event_loop()
-            
-            # Running in executor to avoid blocking the main thread
-            await loop.run_in_executor(
-                None, 
-                lambda: predict_and_save(
-                    [input_file], 
-                    self.output_dir, 
-                    save_midi=True, 
-                    sonify_midi=False, 
-                    save_model_outputs=False, 
-                    save_notes=False
-                )
+            # Extract fundamental frequency using pYIN pitch tracker
+            f0, voiced_flag, voiced_probs = librosa.pyin(
+                y,
+                fmin=librosa.note_to_hz('C2'),
+                fmax=librosa.note_to_hz('C7'),
+                sr=sr,
+                frame_length=2048,
+                hop_length=512
             )
             
-            # basic-pitch derives the output filename from the input filename.
-            # e.g., input.mp3 -> input_basic_pitch.mid
-            # We need to find the generated file and rename it to our UUID based name.
+            mid = mido.MidiFile(ticks_per_beat=480)
+            track = mido.MidiTrack()
+            mid.tracks.append(track)
             
-            input_stem = Path(input_file).stem
-            expected_output = os.path.join(self.output_dir, f"{input_stem}_basic_pitch.mid")
+            hop_length = 512
+            frame_time = hop_length / sr
+            ticks_per_second = (480 * 120) / 60  # Default 120 BPM
             
-            if os.path.exists(expected_output):
-                # Rename to our ID-based name
-                os.rename(expected_output, output_path)
-                return {
-                    "status": "success",
-                    "url": f"/generated_midi/{output_filename}",
-                    "filename": output_filename
-                }
-            else:
-                # Fallback: maybe it didn't append _basic_pitch? or input file had spaces?
-                # Let's list the directory and see if we can find a new .mid file created recently.
-                raise FileNotFoundError(f"Could not find generated MIDI file at expected location: {expected_output}")
+            current_note = None
+            start_frame = 0
+            notes_to_write = []
+            
+            for i, (f, v) in enumerate(zip(f0, voiced_flag)):
+                if v and not np.isnan(f):
+                    midi_note = int(round(librosa.hz_to_midi(f)))
+                    midi_note = max(0, min(127, midi_note))
+                    
+                    if current_note is None:
+                        current_note = midi_note
+                        start_frame = i
+                    elif midi_note != current_note:
+                        end_frame = i
+                        notes_to_write.append((current_note, start_frame * frame_time, end_frame * frame_time))
+                        current_note = midi_note
+                        start_frame = i
+                else:
+                    if current_note is not None:
+                        end_frame = i
+                        notes_to_write.append((current_note, start_frame * frame_time, end_frame * frame_time))
+                        current_note = None
 
+            if current_note is not None:
+                end_frame = len(f0)
+                notes_to_write.append((current_note, start_frame * frame_time, end_frame * frame_time))
+
+            # Write MIDI note events with delta times
+            current_tick = 0
+            for note, start_sec, end_sec in notes_to_write:
+                note_start_tick = int(start_sec * ticks_per_second)
+                note_end_tick = int(end_sec * ticks_per_second)
+                note_dur_tick = max(24, note_end_tick - note_start_tick)
+                
+                delta_start = max(0, note_start_tick - current_tick)
+                track.append(mido.Message('note_on', note=note, velocity=95, time=delta_start))
+                track.append(mido.Message('note_off', note=note, velocity=0, time=note_dur_tick))
+                current_tick = note_start_tick + note_dur_tick
+                
+            mid.save(output_path)
+            print(f"Audio-to-MIDI conversion complete: {output_path}")
+
+            return {
+                "status": "success",
+                "url": f"/generated_midi/{output_filename}",
+                "filename": output_filename
+            }
         except Exception as e:
             print(f"Error converting audio to MIDI: {e}")
             raise e
 
-class MockAudioToMidiService:
-    """Mock service."""
-    def __init__(self, output_dir: str = "generated_midi"):
-        pass
+class MockAudioToMidiService(AudioToMidi):
+    """Fallback legacy class pointing to real AudioToMidi."""
+    pass
 
-    async def convert_audio_to_midi(self, input_file: str) -> dict:
-        import asyncio
-        await asyncio.sleep(2) # Simulate processing
-        return {
-            "status": "success",
-            "url": "/generated_midi/mock_melody.mid",
-            "filename": "mock_melody.mid"
-        }

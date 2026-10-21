@@ -436,3 +436,40 @@ button:disabled {
   background-size: 20px 100%;
   opacity: 0.5;
 }
+
+/* Moises Studio Custom Utility Styles */
+.moises-studio {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Custom range sliders */
+.moises-studio input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #1e293b;
+  border-radius: 6px;
+}
+
+.moises-studio input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #00f2fe;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0, 242, 254, 0.8);
+}
+
+.moises-studio input[type=range]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #00f2fe;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0, 242, 254, 0.8);
+}

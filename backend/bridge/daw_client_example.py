@@ -9,17 +9,17 @@ async def connect_to_copilot():
 
     try:
         async with websockets.connect(uri) as websocket:
-            print("✅ Connected to Audio Copilot!")
+            print("Connected to Audio Copilot!")
 
             # 1. Send Initial State
             print("Sending Project State...")
             await websocket.send(json.dumps({
                 "type": "UPDATE_BPM",
-                "payload": {"bpm": 140}
+                "payload": {"bpm": 120}
             }))
             await websocket.send(json.dumps({
                 "type": "UPDATE_KEY",
-                "payload": {"key": "C Minor"}
+                "payload": {"key": "C Major"}
             }))
             await websocket.send(json.dumps({
                 "type": "UPDATE_TRACKS",
@@ -27,16 +27,6 @@ async def connect_to_copilot():
             }))
 
             print("State sent! Check the left panel in the app.")
-
-            # 2. Simulate dynamic changes
-            for i in range(5):
-                bpm = 140 + i
-                print(f"Updating BPM to {bpm}...")
-                await websocket.send(json.dumps({
-                    "type": "UPDATE_BPM",
-                    "payload": {"bpm": bpm}
-                }))
-                await asyncio.sleep(1)
 
             # 3. Create a loop to keep connection alive
             print("Listening for messages (Ctrl+C to stop)...")
@@ -49,7 +39,7 @@ async def connect_to_copilot():
                     break
 
     except Exception as e:
-        print(f"❌ Connection failed: {e}")
+        print(f"Connection failed: {e}")
         print("Make sure the Audio Copilot backend is running on localhost:8000!")
 
 if __name__ == "__main__":

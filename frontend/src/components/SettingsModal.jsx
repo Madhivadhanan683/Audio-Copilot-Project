@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const SettingsModal = ({ isOpen, onClose }) => {
     const [apiKey, setApiKey] = useState('');
-    const [model, setModel] = useState('mock');
+    const [model, setModel] = useState('local');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
@@ -16,8 +16,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
         try {
             const response = await fetch('http://127.0.0.1:8000/api/settings');
             const data = await response.json();
-            // Backend only returns provider name, not key for security
-            setModel(data.provider);
+            if (data.provider) setModel(data.provider === 'mock' ? 'local' : data.provider);
         } catch (error) {
             console.error('Failed to load settings:', error);
             setMessage('⚠️ Could not connect to backend.');
@@ -29,11 +28,12 @@ const SettingsModal = ({ isOpen, onClose }) => {
         setMessage('');
 
         try {
+            const backendProvider = model === 'local' ? 'mock' : model;
             const response = await fetch('http://127.0.0.1:8000/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    provider: model,
+                    provider: backendProvider,
                     api_key: model === 'openai' ? apiKey : null
                 })
             });
@@ -47,7 +47,6 @@ const SettingsModal = ({ isOpen, onClose }) => {
                     setMessage('');
                 }, 1500);
             } else {
-                // Handle case where detail might be an object
                 const errorMsg = typeof data.detail === 'string'
                     ? data.detail
                     : JSON.stringify(data.detail) || 'Unknown error';
@@ -74,8 +73,8 @@ const SettingsModal = ({ isOpen, onClose }) => {
                         onChange={(e) => setModel(e.target.value)}
                         className="w-full p-2 bg-daw-bg border border-gray-600 rounded text-white focus:border-daw-accent focus:outline-none"
                     >
-                        <option value="mock">Mock Service (Default - Free)</option>
-                        <option value="openai">OpenAI (Requires API Key)</option>
+                        <option value="local">Local Music Producer Engine (Default - Offline/Free)</option>
+                        <option value="openai">OpenAI GPT-4o (Requires API Key)</option>
                     </select>
                 </div>
 
@@ -121,3 +120,4 @@ const SettingsModal = ({ isOpen, onClose }) => {
 };
 
 export default SettingsModal;
+

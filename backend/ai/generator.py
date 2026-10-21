@@ -1,18 +1,13 @@
-import time
+from .audio_service import RealAudioSynthesizer
 
 class AudioGenerator:
     def __init__(self):
-        pass
+        self.synth = RealAudioSynthesizer()
 
-    def generate(self, prompt: str, audio_type: str) -> str:
+    def generate(self, prompt: str, audio_type: str = "synth") -> str:
         """
-        Mock audio generation.
-        Returns a dummy file URL.
+        Generates real synthesized audio based on user prompt and type.
         """
-        # Simulate processing time
-        # time.sleep(2) 
-        
-        print(f"Generating {audio_type} with prompt: {prompt}")
-        
-        # In a real implementation, this would call an AI model and save a .wav file
-        return f"/generated/{audio_type}_{int(time.time())}.wav"
+        combined_prompt = f"{audio_type} {prompt}"
+        return self.synth.generate_audio(combined_prompt)
+

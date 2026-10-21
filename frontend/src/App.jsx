@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ChatInterface from './components/ChatInterface';
 import DAWState from './components/DAWState';
+import DAWPlugin from './components/DAWPlugin';
 import SettingsModal from './components/SettingsModal';
 import AssetBrowser from './components/AssetBrowser';
 import StemSeparator from './components/StemSeparator';
@@ -21,6 +22,7 @@ import './index.css';
 const NAV_ITEMS = [
   { key: 'chat', icon: '💬', label: 'Chat' },
   { key: 'personas', icon: '👤', label: 'AI Co-Producers' },
+  { key: 'dawplugin', icon: '🔌', label: 'DAW Plugin' },
   { key: 'stems', icon: '🎵', label: 'Stem Separator' },
   { key: 'midi', icon: '🎹', label: 'Audio to MIDI' },
   { key: 'mixing', icon: '🎚️', label: 'Mixing Assistant' },
@@ -41,6 +43,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [currentPersona, setCurrentPersona] = useState(null);
   const menuRef = useRef(null);
+  const [showAssets, setShowAssets] = useState(false);
   const [dawState, setDawState] = useState({
     connected: false,
     bpm: 120,
@@ -147,18 +150,40 @@ function App() {
             )}
           </div>
 
+          {/* Compact DAW Status */}
+          <div className="hidden lg:flex items-center gap-4 bg-gray-900/60 px-4 py-1.5 rounded-full border border-gray-700/50">
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${dawState.connected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></span>
+              <span className="text-[10px] font-bold tracking-wider text-gray-400">{dawState.connected ? 'DAW ONLINE' : 'DAW OFFLINE'}</span>
+            </div>
+            <div className="w-px h-4 bg-gray-700"></div>
+            <div className="flex items-center gap-3 text-xs text-gray-300">
+              <span><strong className="text-cyan-400">{dawState.bpm}</strong> BPM</span>
+              <span><strong className="text-purple-400">{dawState.key}</strong></span>
+            </div>
+          </div>
+
+          <button 
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${showAssets ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+            onClick={() => setShowAssets(!showAssets)}
+          >
+            🗂️ Assets
+          </button>
+
           <button className="settings-btn" onClick={() => setIsSettingsOpen(true)}>⚙️ Settings</button>
         </div>
       </header>
       <main>
-        <div className="left-panel">
-          <DAWState state={dawState} />
-          <AssetBrowser />
-        </div>
+        {showAssets && (
+          <div className="left-panel">
+            <AssetBrowser />
+          </div>
+        )}
 
         {/* Conditionally render based on active tab */}
         {activeTab === 'chat' && <ChatInterface currentPersona={currentPersona} dawState={dawState} />}
         {activeTab === 'personas' && <AICoProducers currentPersona={currentPersona} setCurrentPersona={(p) => { setCurrentPersona(p); setActiveTab('chat'); }} />}
+        {activeTab === 'dawplugin' && <DAWPlugin dawState={dawState} />}
         {activeTab === 'stems' && <StemSeparator />}
         {activeTab === 'midi' && <AudioToMidi />}
         {activeTab === 'mixing' && <MixingAssistant />}

@@ -1,4 +1,5 @@
 backend start:.\venv\Scripts\python.exe run.py 
+bridge to fl studio(backend 2): .\venv\Scripts\python.exe bridge\fl_relay.py   
 frontend start: npm run dev
 
 Set your Git Identity (if you haven't already):

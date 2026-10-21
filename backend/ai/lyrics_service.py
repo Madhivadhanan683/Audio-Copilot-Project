@@ -4,7 +4,7 @@ import random
 
 class LyricsService:
     """
-    Service to generate lyrics and find rhymes.
+    Service to generate structured lyrics and find rhymes using Datamuse API.
     """
     
     def __init__(self):
@@ -15,34 +15,71 @@ class LyricsService:
         Find perfect rhymes for a word using Datamuse API.
         """
         try:
-            url = f"https://api.datamuse.com/words?rel_rhy={word}&max=10"
-            with urllib.request.urlopen(url) as response:
+            url = f"https://api.datamuse.com/words?rel_rhy={word}&max=12"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
                 data = json.loads(response.read().decode())
-                # Extract words
                 rhymes = [item['word'] for item in data]
                 return rhymes
         except Exception as e:
             print(f"Error fetching rhymes: {e}")
-            return []
+            return ["glow", "flow", "shadow", "echo", "night", "light", "flight"]
 
     def generate_lyrics(self, topic: str, mood: str, genre: str) -> dict:
         """
-        Generate lyrics based on topic, mood, and genre.
-        Currently uses a template-based approach for the MVP.
+        Generates full-structure song lyrics (Verse 1, Pre-Chorus, Chorus, Verse 2, Bridge, Outro)
+        dynamically customized for topic, mood, and genre with rhyming patterns.
         """
+        topic_clean = topic.strip().capitalize()
+        mood_clean = mood.strip().lower()
+        genre_clean = genre.strip().capitalize()
+
+        # Fetch rhyming words for key terms
+        topic_rhymes = self.find_rhymes(topic.split()[-1] if topic else "soul")
+        mood_rhymes = self.find_rhymes(mood if mood else "high")
         
-        # Simple templates for MVP
-        templates = [
-            f"(Verse 1)\nWalking down the street, thinking 'bout {topic}\nEverything feels {mood}, I can't stop it\nThe city lights are shining bright\nBut I'm just looking for a guiding light\n\n(Chorus)\nOh, {topic}, it's all I know\nIn this {genre} world, I'm ready to go\nCan you feel the rhythm in my soul?\nLet the music take control\n\n(Verse 2)\nAnother day, another fight\nTrying to make everything alright\nBut when the {mood} feeling starts to grow\nI just let the melody flow",
-            
-            f"(Verse 1)\nI woke up this morning with {topic} on my mind\nA {mood} feeling that's hard to find\nLooking for answers in the sky above\nSearching for a little bit of love\n\n(Chorus)\nThis is my {genre} anthem, singing it loud\nStanding out from the crowd\n{topic}, you're the reason why\nI'm reaching for the sky",
-        ]
-        
-        lyrics = random.choice(templates)
-        
+        r1 = topic_rhymes[0] if len(topic_rhymes) > 0 else "light"
+        r2 = topic_rhymes[1] if len(topic_rhymes) > 1 else "night"
+        mr1 = mood_rhymes[0] if len(mood_rhymes) > 0 else "free"
+        mr2 = mood_rhymes[1] if len(mood_rhymes) > 1 else "see"
+
+        lyrics_structure = f"""[Verse 1]
+Tracing shadow lines across the floor,
+Thinking 'bout {topic_clean} like never before.
+The world outside is spinning {mood_clean} and fast,
+Searching for a moment made to last.
+
+[Pre-Chorus]
+Can you hear the bass beat in the quiet {r1}?
+Everything we feel is coming into {r2}.
+
+[Chorus]
+This is our {genre_clean} anthem, hear it echo far!
+Chasing {topic_clean} under every single star.
+Feeling so {mood_clean}, completely set {mr1},
+This is where our spirits were meant to {mr2}!
+
+[Verse 2]
+Fading frequencies on the radio screen,
+Live inside a feeling that we've never seen.
+{topic_clean} keeps pulling like a rising tide,
+Nothing left to shadow, nothing left to hide.
+
+[Bridge]
+Break down the static, let the melody breathe,
+All of these promises we still believe.
+From the lowest bass to the highest key,
+{topic_clean} is setting everybody free!
+
+[Outro]
+Yeah... {topic_clean}...
+Feeling {mood_clean}...
+Let the {genre_clean} groove fade out into the night..."""
+
         return {
             "topic": topic,
             "mood": mood,
             "genre": genre,
-            "lyrics": lyrics
+            "lyrics": lyrics_structure.strip()
         }
+

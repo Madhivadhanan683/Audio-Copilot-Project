@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const CollaborativeSession = () => {
     const [sessionId, setSessionId] = useState('room-1');
+    const [username, setUsername] = useState('Producer 1');
     const [wsConnected, setWsConnected] = useState(false);
     const [sharedState, setSharedState] = useState({
         bpm: 120,
@@ -33,9 +34,9 @@ const CollaborativeSession = () => {
         ws.current = new WebSocket(socketUrl);
 
         ws.current.onopen = () => {
-             console.log(`Connected to session: ${sessionId}`);
+             console.log(`Connected to session: ${sessionId} as ${username}`);
              setWsConnected(true);
-             setMessages(prev => [...prev, { type: 'system', text: `Joined session: ${sessionId}`, id: Date.now() }]);
+             setMessages(prev => [...prev, { type: 'system', text: `${username} joined session: ${sessionId}`, id: Date.now() }]);
         };
 
         ws.current.onmessage = (event) => {
@@ -96,7 +97,7 @@ const CollaborativeSession = () => {
         
         const payload = {
              text: chatInput,
-             sender: `User-${Math.floor(Math.random() * 1000)}` // Mock random ID
+             sender: username || 'Producer'
         };
         
         ws.current.send(JSON.stringify({ type: 'CHAT_MESSAGE', payload }));
@@ -109,24 +110,32 @@ const CollaborativeSession = () => {
             
             {!wsConnected ? (
                 <div className="join-screen flex flex-col items-center justify-center p-8 bg-gray-700 rounded-lg">
-                     <p className="mb-4 text-gray-300">Enter a Room ID to start collaborating</p>
-                     <div className="flex gap-4">
+                     <p className="mb-4 text-gray-300">Enter your name and Room ID to start collaborating</p>
+                     <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                         <input 
+                              type="text" 
+                              value={username} 
+                              onChange={(e) => setUsername(e.target.value)} 
+                              className="px-4 py-2 bg-gray-900 border border-gray-600 rounded text-lg focus:outline-none focus:border-daw-accent"
+                              placeholder="Your Name"
+                         />
                          <input 
                               type="text" 
                               value={sessionId} 
                               onChange={(e) => setSessionId(e.target.value)} 
                               className="px-4 py-2 bg-gray-900 border border-gray-600 rounded text-lg focus:outline-none focus:border-daw-accent"
-                              placeholder="e.g. room-1"
+                              placeholder="Room ID (e.g. room-1)"
                          />
-                         <button 
-                              onClick={connectToSession}
-                              className="px-6 py-2 bg-daw-accent text-gray-900 font-bold rounded hover:bg-daw-accent-hover transition-colors shadow-lg"
-                         >
-                             Join Room
-                         </button>
                      </div>
+                     <button 
+                          onClick={connectToSession}
+                          className="px-8 py-3 bg-daw-accent text-gray-900 font-bold rounded hover:bg-daw-accent-hover transition-colors shadow-lg text-lg"
+                     >
+                         Join Room
+                     </button>
                 </div>
             ) : (
+
                 <div className="session-grid grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Left Column: Shared State */}
                     <div className="shared-state-panel bg-gray-700 p-6 rounded-lg shadow">

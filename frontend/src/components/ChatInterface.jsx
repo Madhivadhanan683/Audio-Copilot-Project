@@ -40,7 +40,11 @@ const ChatInterface = ({ currentPersona, dawState }) => {
         try {
             const payload = { 
                 message: userMsg.text,
-                daw_state: dawState
+                daw_state: dawState,
+                context: messages.map(msg => ({
+                    role: msg.sender === 'user' ? 'user' : 'assistant',
+                    content: msg.text
+                }))
             };
             if (currentPersona) {
                 payload.persona_id = currentPersona.id;

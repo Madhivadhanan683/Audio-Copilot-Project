@@ -15,9 +15,13 @@ class TranscriptionService:
             self.model = None
 
     def transcribe(self, audio_path):
-        if not self.WHISPER_AVAILABLE:
-            raise Exception("Whisper model not available.")
-        
+        if not self.model:
+            try:
+                self.model = whisper.load_model("base")
+                self.WHISPER_AVAILABLE = True
+            except Exception as e:
+                raise Exception(f"Whisper model failed to initialize: {e}")
+
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f"Audio file not found: {audio_path}")
 
@@ -28,10 +32,7 @@ class TranscriptionService:
             print(f"Transcription error: {e}")
             raise e
 
-class MockTranscriptionService:
-    def __init__(self):
-        print("Initialized Mock Transcription Service")
-        self.WHISPER_AVAILABLE = False # Mock doesn't use real whisper
+class MockTranscriptionService(TranscriptionService):
+    """Legacy wrapper forwarding to real TranscriptionService."""
+    pass
 
-    def transcribe(self, audio_path):
-        return "This is a mock transcription of the audio file. The actual transcription service is not available or failed to load."

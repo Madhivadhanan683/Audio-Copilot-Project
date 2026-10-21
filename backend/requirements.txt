@@ -5,3 +5,7 @@ python-multipart
 openai
 websockets
 openai-whisper
+mido
+scipy
+librosa
+numpy

@@ -69,8 +69,9 @@ class StemService:
             cmd = [
                 str(audio_sep_exe),
                 input_p.as_posix(),
-                "--model_filename", "htdemucs.yaml",
+                "--model_filename", "htdemucs_ft.yaml",
                 "--output_dir", job_output_dir.as_posix(),
+                "--output_format", "WAV",
                 "--log_level", "info"
             ]
             
@@ -110,7 +111,7 @@ class StemService:
             self.jobs[job_id]["progress"] = 90
             
             # Find the output stems
-            # Audio-separator naming pattern: {input_filename}_({StemName})_htdemucs.flac
+            # Audio-separator naming pattern: {input_filename}_({StemName})_htdemucs.(wav|flac)
             input_stem_name = input_p.stem
             stems = {}
             found_any = False
@@ -123,20 +124,26 @@ class StemService:
                 "Other": "other"
             }
             
-            # Search both in job_output_dir and any subdirectories created by the model
-            files_to_check = list(job_output_dir.glob("*.flac")) + list(job_output_dir.glob("htdemucs/*.flac"))
+            # Search in job_output_dir and any subdirectories created by the model for wav, flac, mp3
+            files_to_check = (
+                list(job_output_dir.glob("*.wav")) + 
+                list(job_output_dir.glob("*.flac")) + 
+                list(job_output_dir.glob("*/*.wav")) + 
+                list(job_output_dir.glob("*/*.flac"))
+            )
             
             print(f"Checking for output files in {job_output_dir}. Found: {[f.name for f in files_to_check]}")
             
             for sep_name, our_name in name_map.items():
                 expected_pattern = f"({sep_name})"
-                matched_file = next((f for f in files_to_check if expected_pattern in f.name), None)
+                matched_file = next((f for f in files_to_check if expected_pattern.lower() in f.name.lower()), None)
                 
                 if matched_file:
-                    new_filename = f"{our_name}.flac"
+                    ext = matched_file.suffix
+                    new_filename = f"{our_name}{ext}"
                     new_path = job_output_dir / new_filename
                     
-                    # Move to root of job_output_dir if it's in a subfolder
+                    # Move to root of job_output_dir if it's in a subfolder or has original name
                     if matched_file != new_path:
                         if new_path.exists():
                             new_path.unlink()

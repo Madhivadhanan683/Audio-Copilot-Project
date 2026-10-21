@@ -35,26 +35,16 @@ app.add_middleware(
 )
 
 # Initialize Services
-# Default to Mock
-llm_service = MockLLMService()
-audio_service = MockAudioService()
+# Production Real Services
+llm_service = MockLLMService()  # MusicProducerLLMService alias
+audio_service = MockAudioService()  # RealAudioSynthesizer alias
 daw_bridge = DAWBridge()
 
-# Use real StemService for AI separation
-# stem_service = StemService()
-stem_service = MockStemService() # Reverted to Mock Service as per user request
+# Real StemService for Demucs AI separation
+stem_service = StemService()
 
-# Audio to MIDI Service
-# audio_to_midi_service = AudioToMidi()
-# Fallback to mock if basic-pitch is not installed
-try:
-    audio_to_midi_service = AudioToMidi()
-    if not audio_to_midi_service.BASIC_PITCH_AVAILABLE:
-        print("Basic Pitch not available, using Mock Service")
-        audio_to_midi_service = MockAudioToMidiService()
-except ImportError:
-    print("Could not import AudioToMidi, using Mock")
-    audio_to_midi_service = MockAudioToMidiService()
+# Audio to MIDI Service (librosa pitch tracking + mido)
+audio_to_midi_service = AudioToMidi()
 
 # Mixing Service
 mixing_service = MixingService()
@@ -63,14 +53,13 @@ mixing_service = MixingService()
 plugin_service = PluginService()
 
 # Lyrics Service
-# Lyrics Service
 lyrics_service = LyricsService()
 
-# Transcription Service
+# Transcription Service (Whisper)
 try:
     transcription_service = TranscriptionService()
 except Exception as e:
-    print(f"Could not initialize TranscriptionService: {e}")
+    print(f"TranscriptionService lazy initialization ready: {e}")
     transcription_service = MockTranscriptionService()
 
 # Arrangement Service
@@ -95,21 +84,25 @@ export_service = ExportService()
 base_dir = os.path.dirname(os.path.abspath(__file__))
 os.makedirs(os.path.join(base_dir, "generated_midi"), exist_ok=True)
 os.makedirs(os.path.join(base_dir, "separated_stems"), exist_ok=True)
+os.makedirs(os.path.join(base_dir, "generated"), exist_ok=True)
 os.makedirs(os.path.join(base_dir, "uploads"), exist_ok=True)
 
 app.mount("/generated_midi", StaticFiles(directory=os.path.join(base_dir, "generated_midi")), name="generated_midi")
 app.mount("/separated_stems", StaticFiles(directory=os.path.join(base_dir, "separated_stems")), name="separated_stems")
+app.mount("/generated", StaticFiles(directory=os.path.join(base_dir, "generated")), name="generated")
 
 # Store current settings
 current_settings = {
-    "provider": "mock",
+    "provider": "production",
     "api_key": None
 }
+
 
 class ChatRequest(BaseModel):
     message: str
     persona_id: str | None = None
     daw_state: dict | None = None
+    context: list | None = None
 
 class GenerateRequest(BaseModel):
     prompt: str
@@ -186,6 +179,7 @@ async def chat(request: ChatRequest):
     try:
         response = llm_service.generate_response(
             request.message, 
+            context=request.context,
             persona_id=request.persona_id,
             daw_state=request.daw_state
         )
@@ -716,9 +710,13 @@ async def analyze_for_export(
 
 # ============== WEBSOCKET ==============
 
+from bridge.daw_server import ClientType
+
 @app.websocket("/ws/daw")
 async def websocket_endpoint(websocket: WebSocket):
-    await daw_bridge.connect(websocket)
+    # The relay sends X-Client-Type: daw_relay; browsers send frontend
+    client_type = websocket.headers.get("x-client-type", ClientType.FRONTEND)
+    await daw_bridge.connect(websocket, client_type=client_type)
     try:
         while True:
             data = await websocket.receive_text()
@@ -745,3 +743,66 @@ async def session_websocket(websocket: WebSocket, session_id: str):
     except Exception as e:
         print(f"Session WebSocket Error: {e}")
         session_manager.disconnect(websocket, session_id)
+
+# ============== PLUGIN API ==============
+
+class TransportRequest(BaseModel):
+    action: str  # "play" | "stop" | "record"
+
+class SetBpmRequest(BaseModel):
+    bpm: float
+
+class SendFileRequest(BaseModel):
+    path: str
+    target: str = "mixer"  # "mixer" | "piano_roll" | "playlist"
+
+@app.get("/api/plugin/daw-state")
+async def get_daw_state():
+    """Return the current cached DAW state."""
+    relay_connected = len(daw_bridge.daw_relay_connections) > 0
+    return {
+        **daw_bridge.daw_state,
+        "relay_connected": relay_connected,
+        "frontend_count": len(daw_bridge.frontend_connections),
+    }
+
+@app.post("/api/plugin/transport")
+async def plugin_transport(req: TransportRequest):
+    """Send a transport command (play/stop/record) to FL Studio."""
+    ok = await daw_bridge.send_command_to_daw({
+        "type": "CMD_TRANSPORT",
+        "payload": {"action": req.action}
+    })
+    return {"sent": ok, "action": req.action}
+
+@app.post("/api/plugin/set-bpm")
+async def plugin_set_bpm(req: SetBpmRequest):
+    """Push a new BPM value to FL Studio."""
+    ok = await daw_bridge.send_command_to_daw({
+        "type": "CMD_SET_BPM",
+        "payload": {"bpm": req.bpm}
+    })
+    return {"sent": ok, "bpm": req.bpm}
+
+@app.post("/api/plugin/send-file")
+async def plugin_send_file(req: SendFileRequest):
+    """
+    Instruct FL Studio to open/import a file (MIDI, WAV stem, etc.).
+    The relay forwards this as a CMD_OPEN_FILE SysEx to FL Studio.
+    """
+    if not os.path.exists(req.path):
+        raise HTTPException(status_code=404, detail=f"File not found: {req.path}")
+    ok = await daw_bridge.send_command_to_daw({
+        "type": "CMD_OPEN_FILE",
+        "payload": {"path": req.path, "target": req.target}
+    })
+    return {"sent": ok, "path": req.path, "target": req.target}
+
+@app.get("/api/plugin/relay-status")
+async def relay_status():
+    """Check if the FL Studio relay (fl_relay.py) is connected."""
+    return {
+        "relay_connected": len(daw_bridge.daw_relay_connections) > 0,
+        "frontend_count": len(daw_bridge.frontend_connections),
+        "daw_state": daw_bridge.daw_state,
+    }
