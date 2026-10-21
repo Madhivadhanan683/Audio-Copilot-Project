@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { apiUrl } from '../lib/api';
 
 const ChatInterface = ({ currentPersona, dawState }) => {
     const defaultWelcome = "I'm your Audio Copilot. Ready to produce? Try asking for a 'sad violin melody'.";
@@ -50,7 +51,7 @@ const ChatInterface = ({ currentPersona, dawState }) => {
                 payload.persona_id = currentPersona.id;
             }
 
-            const response = await fetch('http://127.0.0.1:8000/api/chat', {
+            const response = await fetch(apiUrl('/api/chat'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -71,7 +72,8 @@ const ChatInterface = ({ currentPersona, dawState }) => {
 
     const handleDragStart = (e, fileUrl, fileName) => {
         e.dataTransfer.setData("text/plain", fileUrl);
-        e.dataTransfer.setData("DownloadURL", `audio/midi:${fileName}:${window.location.protocol}//${window.location.hostname}:8000${fileUrl}`);
+        const downloadUrl = new URL(apiUrl(fileUrl), window.location.origin).toString();
+        e.dataTransfer.setData("DownloadURL", `audio/midi:${fileName}:${downloadUrl}`);
         // This 'DownloadURL' format is specific to Chrome/Chromium to allow drag-out downloads
     };
 
@@ -100,7 +102,7 @@ const ChatInterface = ({ currentPersona, dawState }) => {
                                                 <div className="text-xs text-gray-400 uppercase">{file.type}</div>
                                             </div>
                                         </div>
-                                        <a href={`http://127.0.0.1:8000${file.url}`} download className="text-daw-accent hover:text-white">
+                                        <a href={apiUrl(file.url)} download className="text-daw-accent hover:text-white">
                                             ⬇️
                                         </a>
                                     </div>
@@ -142,4 +144,3 @@ const ChatInterface = ({ currentPersona, dawState }) => {
 };
 
 export default ChatInterface;
-

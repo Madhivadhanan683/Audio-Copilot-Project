@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { apiUrl } from '../lib/api';
 
 const HumanizeMidi = () => {
     const [file, setFile] = useState(null);
@@ -61,7 +62,7 @@ const HumanizeMidi = () => {
                 swing: swing.toString(),
             });
 
-            const response = await fetch(`http://127.0.0.1:8000/api/humanize/process?${params}`, {
+            const response = await fetch(apiUrl(`/api/humanize/process?${params}`), {
                 method: 'POST',
                 body: formData
             });
@@ -267,7 +268,7 @@ const HumanizeMidi = () => {
                         <div className="text-3xl mb-3">🎵</div>
                         <p className="text-gray-300 font-medium mb-3">{result.filename}</p>
                         <a
-                            href={`http://127.0.0.1:8000${result.url}`}
+                            href={apiUrl(result.url)}
                             download={result.filename}
                             className="inline-block px-6 py-3 bg-daw-accent text-black font-bold rounded hover:opacity-90 transition-opacity"
                         >

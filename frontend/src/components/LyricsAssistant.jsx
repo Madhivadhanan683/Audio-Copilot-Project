@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiUrl } from '../lib/api';
 
 const LyricsAssistant = () => {
     // Generator State
@@ -20,7 +21,7 @@ const LyricsAssistant = () => {
 
         setIsGenerating(true);
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/lyrics/generate', {
+            const response = await fetch(apiUrl('/api/lyrics/generate'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -46,7 +47,7 @@ const LyricsAssistant = () => {
 
         setIsRhyming(true);
         try {
-            const response = await fetch(`http://127.0.0.1:8000/api/lyrics/rhyme/${rhymeWord}`);
+            const response = await fetch(apiUrl(`/api/lyrics/rhyme/${encodeURIComponent(rhymeWord)}`));
             if (response.ok) {
                 const data = await response.json();
                 setRhymes(data.rhymes || []);

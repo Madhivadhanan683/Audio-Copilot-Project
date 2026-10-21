@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiUrl } from '../lib/api';
 
 const PresetGenerator = () => {
     const [synth, setSynth] = useState('vital');
@@ -13,7 +14,7 @@ const PresetGenerator = () => {
         setLastGenerated(null);
 
         try {
-            const response = await fetch('http://localhost:8000/api/presets/generate', {
+            const response = await fetch(apiUrl('/api/presets/generate'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

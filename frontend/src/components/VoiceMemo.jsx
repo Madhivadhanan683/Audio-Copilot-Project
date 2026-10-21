@@ -1,5 +1,6 @@
 
 import React, { useState, useRef } from 'react';
+import { apiUrl } from '../lib/api';
 
 const VoiceMemo = () => {
     const [isRecording, setIsRecording] = useState(false);
@@ -68,7 +69,7 @@ const VoiceMemo = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:8000/api/transcription/transcribe', {
+            const response = await fetch(apiUrl('/api/transcription/transcribe'), {
                 method: 'POST',
                 body: formData,
             });
@@ -92,7 +93,7 @@ const VoiceMemo = () => {
         if (!transcription) return;
 
         try {
-            const response = await fetch('http://localhost:8000/api/transcription/save', {
+            const response = await fetch(apiUrl('/api/transcription/save'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

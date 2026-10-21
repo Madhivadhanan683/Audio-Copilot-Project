@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-
-const API = 'http://localhost:8000';
+import { apiUrl } from '../lib/api';
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
@@ -338,7 +337,7 @@ export default function DAWPlugin({ dawState: propDawState }) {
   useEffect(() => {
     const poll = async () => {
       try {
-        const res = await fetch(`${API}/api/plugin/relay-status`);
+        const res = await fetch(apiUrl('/api/plugin/relay-status'));
         if (res.ok) {
           const data = await res.json();
           setRelayState(data);
@@ -358,7 +357,7 @@ export default function DAWPlugin({ dawState: propDawState }) {
 
   const handleTransport = useCallback(async (action) => {
     try {
-      const res = await fetch(`${API}/api/plugin/transport`, {
+      const res = await fetch(apiUrl('/api/plugin/transport'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
@@ -376,7 +375,7 @@ export default function DAWPlugin({ dawState: propDawState }) {
 
   const handleSetBpm = useCallback(async (bpm) => {
     try {
-      const res = await fetch(`${API}/api/plugin/set-bpm`, {
+      const res = await fetch(apiUrl('/api/plugin/set-bpm'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bpm }),

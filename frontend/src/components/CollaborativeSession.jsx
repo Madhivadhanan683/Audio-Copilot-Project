@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { webSocketUrl } from '../lib/api';
 
 const CollaborativeSession = () => {
     const [sessionId, setSessionId] = useState('room-1');
@@ -30,7 +31,7 @@ const CollaborativeSession = () => {
             ws.current.close();
         }
 
-        const socketUrl = `ws://localhost:8000/ws/session/${sessionId}`;
+        const socketUrl = webSocketUrl(`/ws/session/${encodeURIComponent(sessionId)}`);
         ws.current = new WebSocket(socketUrl);
 
         ws.current.onopen = () => {

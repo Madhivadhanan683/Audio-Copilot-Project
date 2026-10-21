@@ -2,6 +2,8 @@ backend start:.\venv\Scripts\python.exe run.py
 bridge to fl studio(backend 2): .\venv\Scripts\python.exe bridge\fl_relay.py   
 frontend start: npm run dev
 
+Vercel Deployment link: https://audio-copilot-project-bice.vercel.app/
+
 Set your Git Identity (if you haven't already):
 powershell
 git config --global user.email "you@example.com"

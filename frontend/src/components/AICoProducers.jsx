@@ -1,29 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import personas from '../data/personas';
 
 const AICoProducers = ({ currentPersona, setCurrentPersona }) => {
-  const [personas, setPersonas] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('http://localhost:8000/api/personas')
-      .then(res => res.json())
-      .then(data => {
-        setPersonas(data.personas || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Failed to load personas", err);
-        setLoading(false);
-      });
-  }, []);
-
   const handleSelect = (persona) => {
     setCurrentPersona(persona);
   };
-
-  if (loading) {
-    return <div className="card p-6"><div className="loader"></div> Loading Co-Producers...</div>;
-  }
 
   return (
     <div className="card p-6">
@@ -60,6 +41,8 @@ const AICoProducers = ({ currentPersona, setCurrentPersona }) => {
                 src={persona.avatar} 
                 alt={persona.name} 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                fetchPriority="high"
+                decoding="async"
                 onError={(e) => {
                   e.target.onerror = null; 
                   e.target.src = `https://ui-avatars.com/api/?name=${persona.name.replace(' ', '+')}&background=random`

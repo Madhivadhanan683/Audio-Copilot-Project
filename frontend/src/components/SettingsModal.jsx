@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiUrl } from '../lib/api';
 
 const SettingsModal = ({ isOpen, onClose }) => {
     const [apiKey, setApiKey] = useState('');
@@ -14,7 +15,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
 
     const fetchSettings = async () => {
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/settings');
+            const response = await fetch(apiUrl('/api/settings'));
             const data = await response.json();
             if (data.provider) setModel(data.provider === 'mock' ? 'local' : data.provider);
         } catch (error) {
@@ -29,7 +30,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
 
         try {
             const backendProvider = model === 'local' ? 'mock' : model;
-            const response = await fetch('http://127.0.0.1:8000/api/settings', {
+            const response = await fetch(apiUrl('/api/settings'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -120,4 +121,3 @@ const SettingsModal = ({ isOpen, onClose }) => {
 };
 
 export default SettingsModal;
-

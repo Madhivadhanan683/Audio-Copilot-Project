@@ -17,6 +17,7 @@ import PresetGenerator from './components/PresetGenerator';
 import CollaborativeSession from './components/CollaborativeSession';
 import ExportAssistant from './components/ExportAssistant';
 import AICoProducers from './components/AICoProducers';
+import { webSocketUrl } from './lib/api';
 import './index.css';
 
 const NAV_ITEMS = [
@@ -66,7 +67,7 @@ function App() {
 
   useEffect(() => {
     const connectWebSocket = () => {
-      ws.current = new WebSocket('ws://localhost:8000/ws/daw');
+      ws.current = new WebSocket(webSocketUrl('/ws/daw'));
 
       ws.current.onopen = () => {
         console.log('Connected to DAW WS');
@@ -149,6 +150,13 @@ function App() {
               </div>
             )}
           </div>
+
+          <button
+            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-500 transition-colors"
+            onClick={() => handleTabSelect('chat')}
+          >
+            💬 Chat
+          </button>
 
           {/* Compact DAW Status */}
           <div className="hidden lg:flex items-center gap-4 bg-gray-900/60 px-4 py-1.5 rounded-full border border-gray-700/50">

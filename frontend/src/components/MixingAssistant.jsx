@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { apiUrl } from '../lib/api';
 
 const MixingAssistant = () => {
     const [file, setFile] = useState(null);
@@ -50,7 +51,7 @@ const MixingAssistant = () => {
         formData.append('file', file);
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/mixing/analyze', {
+            const response = await fetch(apiUrl('/api/mixing/analyze'), {
                 method: 'POST',
                 body: formData
             });

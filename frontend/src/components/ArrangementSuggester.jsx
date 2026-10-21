@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { apiUrl } from '../lib/api';
 
 const ArrangementSuggester = () => {
     const [file, setFile] = useState(null);
@@ -50,7 +51,7 @@ const ArrangementSuggester = () => {
         formData.append('file', file);
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/arrangement/analyze', {
+            const response = await fetch(apiUrl('/api/arrangement/analyze'), {
                 method: 'POST',
                 body: formData
             });

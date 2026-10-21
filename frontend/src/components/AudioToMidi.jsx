@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { apiUrl } from '../lib/api';
 
 const AudioToMidi = () => {
     const [file, setFile] = useState(null);
@@ -59,7 +60,7 @@ const AudioToMidi = () => {
 
         try {
             console.log("Sending request to API...");
-            const response = await fetch('http://127.0.0.1:8000/api/midi/audio-to-midi', {
+            const response = await fetch(apiUrl('/api/midi/audio-to-midi'), {
                 method: 'POST',
                 body: formData
             });
@@ -158,7 +159,7 @@ const AudioToMidi = () => {
                         <p className="text-daw-text font-medium mb-4">{result.filename}</p>
 
                         <a
-                            href={`http://127.0.0.1:8000${result.url}`}
+                            href={apiUrl(result.url)}
                             download
                             className="inline-block px-6 py-3 bg-daw-accent text-black font-bold rounded hover:bg-opacity-90 transition-all"
                         >

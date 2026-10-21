@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiUrl } from '../lib/api';
 
 const ExportAssistant = () => {
     const [file, setFile] = useState(null);
@@ -22,7 +23,7 @@ const ExportAssistant = () => {
         formData.append('file', file);
 
         try {
-            const response = await fetch('http://localhost:8000/api/export/analyze', {
+            const response = await fetch(apiUrl('/api/export/analyze'), {
                 method: 'POST',
                 body: formData,
             });

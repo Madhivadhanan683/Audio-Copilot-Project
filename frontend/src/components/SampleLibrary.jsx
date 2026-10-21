@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { apiUrl } from '../lib/api';
 
 const SampleLibrary = () => {
     const [folderPath, setFolderPath] = useState('');
@@ -22,7 +23,7 @@ const SampleLibrary = () => {
         setSamples([]);
 
         try {
-            const response = await fetch('http://localhost:8000/api/samples/scan', {
+            const response = await fetch(apiUrl('/api/samples/scan'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -86,7 +87,7 @@ const SampleLibrary = () => {
             {/* Hidden audio element for playback */}
             <audio 
                 ref={audioRef} 
-                src={currentlyPlaying ? `http://localhost:8000/api/samples/audio?path=${encodeURIComponent(currentlyPlaying.path)}` : ''} 
+                src={currentlyPlaying ? apiUrl(`/api/samples/audio?path=${encodeURIComponent(currentlyPlaying.path)}`) : ''}
                 onEnded={() => setCurrentlyPlaying(null)}
             />
 

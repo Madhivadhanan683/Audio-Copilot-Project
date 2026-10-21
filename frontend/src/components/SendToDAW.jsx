@@ -10,8 +10,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-
-const API = 'http://localhost:8000';
+import { apiUrl } from '../lib/api';
 
 const TARGET_ICONS = {
   mixer:      '🎚️',
@@ -35,7 +34,7 @@ export default function SendToDAW({
     setErrorMsg('');
 
     try {
-      const res = await fetch(`${API}/api/plugin/send-file`, {
+      const res = await fetch(apiUrl('/api/plugin/send-file'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: filePath, target }),

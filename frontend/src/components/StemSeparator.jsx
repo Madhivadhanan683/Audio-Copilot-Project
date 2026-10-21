@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { apiUrl } from '../lib/api';
 
 // Default Track Configuration
 const DEFAULT_STEM_KEYS = ['vocals', 'drums', 'bass', 'other', 'metronome'];
@@ -454,7 +455,7 @@ const StemSeparator = () => {
         formData.append('file', file);
 
         try {
-            const res = await fetch('http://127.0.0.1:8000/api/stems/upload', {
+            const res = await fetch(apiUrl('/api/stems/upload'), {
                 method: 'POST',
                 body: formData
             });
@@ -474,7 +475,7 @@ const StemSeparator = () => {
 
     const pollStatus = async (id) => {
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/stems/status/${id}`);
+            const res = await fetch(apiUrl(`/api/stems/status/${id}`));
             const data = await res.json();
             setStatus(data);
 
@@ -500,7 +501,7 @@ const StemSeparator = () => {
         for (const key of ['vocals', 'drums', 'bass', 'other']) {
             if (stemsMap && stemsMap[key]) {
                 try {
-                    const audioUrl = `http://127.0.0.1:8000${stemsMap[key]}`;
+                    const audioUrl = apiUrl(stemsMap[key]);
                     const res = await fetch(audioUrl);
                     const arrayBuf = await res.arrayBuffer();
                     const audioBuffer = await ctx.decodeAudioData(arrayBuf);
@@ -588,7 +589,7 @@ const StemSeparator = () => {
 
     const downloadStem = (key) => {
         if (jobId) {
-            window.open(`http://127.0.0.1:8000/api/stems/download/${jobId}/${key}`, '_blank');
+            window.open(apiUrl(`/api/stems/download/${jobId}/${key}`), '_blank');
         } else {
             alert(`Realtime DSP Mode: Exporting stem '${key}'. (Upload to AI server to save high-res neural demux).`);
         }
